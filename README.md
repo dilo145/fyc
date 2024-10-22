@@ -13,7 +13,7 @@ pip install arcade
 ou
 
 ```
-pip install arcade
+python3 install arcade
 ```
 
 ### Démarrer le jeu
