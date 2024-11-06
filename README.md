@@ -19,11 +19,11 @@ python3 install arcade
 ### Démarrer le jeu
 
 ```
-pip main.py
+pip game.py
 ```
 
 ou
 
 ```
-python3 main.py
+python3 game.py
 ```
