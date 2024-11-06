@@ -27,10 +27,14 @@ class MainMenuView(arcade.View):
     def on_draw(self):
         """ Render the screen """
         self.clear()
-        arcade.draw_text("CoFyc", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + 50,
-                         arcade.color.WHITE, font_size=50, anchor_x="center")
-        arcade.draw_text("Press ENTER to start", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 50,
-                         arcade.color.GRAY, font_size=20, anchor_x="center")
+
+        window_width = self.window.width
+        window_height = self.window.height
+
+        arcade.draw_text("CoFyc", window_width / 2, window_height / 2 + 50,
+                         arcade.color.WHITE, font_size=50, anchor_x="center", anchor_y="center")
+        arcade.draw_text("Press ENTER to start", window_width / 2, window_height / 2 - 50,
+                         arcade.color.GRAY, font_size=20, anchor_x="center", anchor_y="center")
 
     def on_key_press(self, key, modifiers):
         """ Start the game when the player presses ENTER """
@@ -38,6 +42,53 @@ class MainMenuView(arcade.View):
             game_view = MyGame()
             game_view.setup()
             self.window.show_view(game_view)
+
+class EndGameView(arcade.View):
+    """ End game view """
+
+    def __init__(self, is_win, score=0):
+        super().__init__()
+        self.is_win = is_win  # True if the game is won, False if it's game over
+        self.score = score  # Score at the end of the game
+
+    def on_show(self):
+        arcade.set_background_color(arcade.color.BLACK)
+
+    def on_draw(self):
+        """ Render the end screen """
+        self.clear()
+
+        window_width = self.window.width
+        window_height = self.window.height
+
+        # Display different text based on whether it's a win or game over
+        if self.is_win:
+            end_message = "You Win!"
+            color = arcade.color.GREEN
+            score_message = f"Final Score: {self.score}"
+        else:
+            end_message = "Game Over!"
+            color = arcade.color.RED
+            score_message = ""  # No score display if it's a game over
+
+        arcade.draw_text(end_message, window_width / 2, window_height / 2 + 50,
+                         color, font_size=50, anchor_x="center", anchor_y="center")
+
+        # Draw the score if the game is won
+        if self.is_win:
+            arcade.draw_text(score_message, window_width / 2, window_height / 2,
+                             arcade.color.WHITE, font_size=20, anchor_x="center", anchor_y="center")
+
+        arcade.draw_text("Press ESC to return to Main Menu", window_width / 2, window_height / 2 - 50,
+                         arcade.color.GRAY, font_size=20, anchor_x="center", anchor_y="center")
+
+    def on_key_press(self, key, modifiers):
+        """ Handle key press on end screen """
+        if key == arcade.key.ESCAPE:
+            menu_view = MainMenuView()
+            self.window.show_view(menu_view)
+
+
 
 class MyGame(arcade.View):
     """
@@ -55,6 +106,9 @@ class MyGame(arcade.View):
         self.score = 0
         self.left_key_down = False
         self.right_key_down = False
+        
+        self.off_ground_time = 0
+        self.fall_threshold = 1.0 
 
     def setup(self):
         """Set up the game here. Call this function to restart the game."""
@@ -129,21 +183,44 @@ class MyGame(arcade.View):
 
     def on_update(self, delta_time):
         self.physics_engine.update()
-        coin_hit_list = arcade.check_for_collision_with_list(
+
+        # Track coffee and sugar collisions
+        coffee_hit_list = arcade.check_for_collision_with_list(
             self.player_sprite, self.scene["coffee"]
         )
         sugar_hit_list = arcade.check_for_collision_with_list(
             self.player_sprite, self.scene["sugar"]
         )
+        
+        # Check for developer sprite collision (win condition)
+        developer_hit = arcade.check_for_collision_with_list(
+            self.player_sprite, self.scene["developer"]
+        )
+        if len(developer_hit) > 0:
+            end_view = EndGameView(is_win=True, score=self.score)
+            self.window.show_view(end_view)
 
-        for coin in coin_hit_list:
-            coin.remove_from_sprite_lists()
+        # Track time off ground
+        if not self.physics_engine.can_jump():
+            self.off_ground_time += delta_time
+            # Trigger game over if off ground for too long
+            if self.off_ground_time > self.fall_threshold:
+                end_view = EndGameView(is_win=False, score=self.score)
+                self.window.show_view(end_view)
+        else:
+            # Reset off-ground time if player is on ground
+            self.off_ground_time = 0
+
+        # Process item collisions
+        for coffee in coffee_hit_list:
+            coffee.remove_from_sprite_lists()
             self.score += 1
 
         for sugar in sugar_hit_list:
             sugar.remove_from_sprite_lists()
             self.score -= 1
 
+        # Update camera
         self.center_camera_to_player()
 
     def on_resize(self, width, height):
@@ -151,7 +228,7 @@ class MyGame(arcade.View):
         self.camera_gui.resize(int(width), int(height))
 
 def main():
-    window = arcade.Window(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
+    window = arcade.Window(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE, fullscreen=True, center_window=True)
     menu_view = MainMenuView()
     window.show_view(menu_view)
     arcade.run()
