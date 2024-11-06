@@ -7,7 +7,7 @@ SCREEN_WIDTH = 1000
 SCREEN_HEIGHT = 650
 
 # Constants used to scale our sprites from their original size
-CHARACTER_SCALING = 1
+CHARACTER_SCALING = 0.35
 TILE_SCALING = 0.5
 COIN_SCALING = 0.5
 SPRITE_PIXEL_SIZE = 128
@@ -74,7 +74,7 @@ class MyGame(arcade.View):
 
         self.score = 0
 
-        src = ":resources:images/animated_characters/female_adventurer/femaleAdventurer_idle.png"
+        src = "./assets/sprites/resources/coffee_player.png"
         self.player_sprite = arcade.Sprite(src, CHARACTER_SCALING)
         self.player_sprite.center_x = 128
         self.player_sprite.center_y = 128
