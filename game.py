@@ -2,25 +2,17 @@ import arcade
 
 # --- Constants
 SCREEN_TITLE = "CoFyc"
-
 SCREEN_WIDTH = 1000
 SCREEN_HEIGHT = 650
 
-# Constants used to scale our sprites from their original size
-CHARACTER_SCALING = 0.35
+CHARACTER_SCALING = 0.32
 TILE_SCALING = 0.5
-COIN_SCALING = 0.5
-SPRITE_PIXEL_SIZE = 128
-GRID_PIXEL_SIZE = SPRITE_PIXEL_SIZE * TILE_SCALING
-
-# Movement speed of player, in pixels per frame
 PLAYER_MOVEMENT_SPEED = 10
 GRAVITY = 1
 PLAYER_JUMP_SPEED = 20
+ANIMATION_INTERVAL = 0.2  # Time in seconds between frame switches
 
 class MainMenuView(arcade.View):
-    """ Main menu view """
-
     def on_show(self):
         arcade.set_background_color(arcade.color.AMAZON)
 
@@ -57,7 +49,6 @@ class EndGameView(arcade.View):
     def on_draw(self):
         """ Render the end screen """
         self.clear()
-
         window_width = self.window.width
         window_height = self.window.height
 
@@ -78,7 +69,6 @@ class EndGameView(arcade.View):
         if self.is_win:
             arcade.draw_text(score_message, window_width / 2, window_height / 2,
                              arcade.color.WHITE, font_size=20, anchor_x="center", anchor_y="center")
-
         arcade.draw_text("Press ESC to return to Main Menu", window_width / 2, window_height / 2 - 50,
                          arcade.color.GRAY, font_size=20, anchor_x="center", anchor_y="center")
 
@@ -87,8 +77,6 @@ class EndGameView(arcade.View):
         if key == arcade.key.ESCAPE:
             menu_view = MainMenuView()
             self.window.show_view(menu_view)
-
-
 
 class MyGame(arcade.View):
     """
@@ -106,9 +94,14 @@ class MyGame(arcade.View):
         self.score = 0
         self.left_key_down = False
         self.right_key_down = False
-        
         self.off_ground_time = 0
-        self.fall_threshold = 1.0 
+        self.fall_threshold = 1.0
+        self.player_images = [
+            "./assets/sprites/resources/coffeeAnimation1.png",
+            "./assets/sprites/resources/coffeeAnimation2.png"
+        ]
+        self.current_image = 0
+        self.animation_timer = 0  # Timer to control animation speed
 
     def setup(self):
         """Set up the game here. Call this function to restart the game."""
@@ -122,18 +115,13 @@ class MyGame(arcade.View):
 
         self.tile_map = arcade.load_tilemap(map_name, TILE_SCALING, layer_options)
         self.scene = arcade.Scene.from_tilemap(self.tile_map)
-
         if self.tile_map.background_color:
             arcade.set_background_color(self.tile_map.background_color)
-
         self.score = 0
-
-        src = "./assets/sprites/resources/coffee_player.png"
-        self.player_sprite = arcade.Sprite(src, CHARACTER_SCALING)
+        self.player_sprite = arcade.Sprite(self.player_images[self.current_image], CHARACTER_SCALING)
         self.player_sprite.center_x = 128
         self.player_sprite.center_y = 128
         self.scene.add_sprite("Player", self.player_sprite)
-
         self.physics_engine = arcade.PhysicsEnginePlatformer(
             self.player_sprite, gravity_constant=GRAVITY, walls=self.scene["ground"]
         )
@@ -159,18 +147,16 @@ class MyGame(arcade.View):
                 self.player_sprite.change_y = PLAYER_JUMP_SPEED
         elif key == arcade.key.LEFT or key == arcade.key.A:
             self.left_key_down = True
-            self.update_player_speed()
         elif key == arcade.key.RIGHT or key == arcade.key.D:
             self.right_key_down = True
-            self.update_player_speed()
+        self.update_player_speed()
 
     def on_key_release(self, key, modifiers):
         if key == arcade.key.LEFT or key == arcade.key.A:
             self.left_key_down = False
-            self.update_player_speed()
         elif key == arcade.key.RIGHT or key == arcade.key.D:
             self.right_key_down = False
-            self.update_player_speed()
+        self.update_player_speed()
 
     def center_camera_to_player(self):
         screen_center_x = self.player_sprite.center_x - (self.camera_sprites.viewport_width / 2)
@@ -183,19 +169,17 @@ class MyGame(arcade.View):
 
     def on_update(self, delta_time):
         self.physics_engine.update()
+        self.animation_timer += delta_time
 
-        # Track coffee and sugar collisions
-        coffee_hit_list = arcade.check_for_collision_with_list(
-            self.player_sprite, self.scene["coffee"]
-        )
-        sugar_hit_list = arcade.check_for_collision_with_list(
-            self.player_sprite, self.scene["sugar"]
-        )
-        
-        # Check for developer sprite collision (win condition)
-        developer_hit = arcade.check_for_collision_with_list(
-            self.player_sprite, self.scene["developer"]
-        )
+        if self.left_key_down or self.right_key_down:
+            if self.animation_timer >= ANIMATION_INTERVAL:
+                self.current_image = (self.current_image + 1) % 2
+                self.player_sprite.texture = arcade.load_texture(self.player_images[self.current_image])
+                self.animation_timer = 0
+
+        coffee_hit_list = arcade.check_for_collision_with_list(self.player_sprite, self.scene["coffee"])
+        sugar_hit_list = arcade.check_for_collision_with_list(self.player_sprite, self.scene["sugar"])
+        developer_hit = arcade.check_for_collision_with_list(self.player_sprite, self.scene["developer"])
         if len(developer_hit) > 0:
             end_view = EndGameView(is_win=True, score=self.score)
             self.window.show_view(end_view)
@@ -228,7 +212,7 @@ class MyGame(arcade.View):
         self.camera_gui.resize(int(width), int(height))
 
 def main():
-    window = arcade.Window(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE, fullscreen=True, center_window=True)
+    window = arcade.Window(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE, center_window=True)
     menu_view = MainMenuView()
     window.show_view(menu_view)
     arcade.run()
