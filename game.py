@@ -52,7 +52,6 @@ class EndGameView(arcade.View):
         window_width = self.window.width
         window_height = self.window.height
 
-        # Display different text based on whether it's a win or game over
         if self.is_win:
             end_message = "You Win!"
             color = arcade.color.GREEN
@@ -60,12 +59,11 @@ class EndGameView(arcade.View):
         else:
             end_message = "Game Over!"
             color = arcade.color.RED
-            score_message = ""  # No score display if it's a game over
+            score_message = ""
 
         arcade.draw_text(end_message, window_width / 2, window_height / 2 + 50,
                          color, font_size=50, anchor_x="center", anchor_y="center")
 
-        # Draw the score if the game is won
         if self.is_win:
             arcade.draw_text(score_message, window_width / 2, window_height / 2,
                              arcade.color.WHITE, font_size=20, anchor_x="center", anchor_y="center")
@@ -102,6 +100,10 @@ class MyGame(arcade.View):
         ]
         self.current_image = 0
         self.animation_timer = 0  # Timer to control animation speed
+
+        # Grace period attributes
+        self.grace_period = 1.0  # 1 second of grace period
+        self.grace_timer = 0.0
 
     def setup(self):
         """Set up the game here. Call this function to restart the game."""
@@ -171,6 +173,19 @@ class MyGame(arcade.View):
         self.physics_engine.update()
         self.animation_timer += delta_time
 
+        # Grace period to allow the player to start without an instant game over
+        if self.grace_timer < self.grace_period:
+            self.grace_timer += delta_time
+        else:
+            # Proceed with regular off-ground time tracking after grace period
+            if not self.physics_engine.can_jump():
+                self.off_ground_time += delta_time
+                if self.off_ground_time > self.fall_threshold:
+                    end_view = EndGameView(is_win=False, score=self.score)
+                    self.window.show_view(end_view)
+            else:
+                self.off_ground_time = 0
+
         if self.left_key_down or self.right_key_down:
             if self.animation_timer >= ANIMATION_INTERVAL:
                 self.current_image = (self.current_image + 1) % 2
@@ -184,18 +199,6 @@ class MyGame(arcade.View):
             end_view = EndGameView(is_win=True, score=self.score)
             self.window.show_view(end_view)
 
-        # Track time off ground
-        if not self.physics_engine.can_jump():
-            self.off_ground_time += delta_time
-            # Trigger game over if off ground for too long
-            if self.off_ground_time > self.fall_threshold:
-                end_view = EndGameView(is_win=False, score=self.score)
-                self.window.show_view(end_view)
-        else:
-            # Reset off-ground time if player is on ground
-            self.off_ground_time = 0
-
-        # Process item collisions
         for coffee in coffee_hit_list:
             coffee.remove_from_sprite_lists()
             self.score += 1
@@ -204,7 +207,6 @@ class MyGame(arcade.View):
             sugar.remove_from_sprite_lists()
             self.score -= 1
 
-        # Update camera
         self.center_camera_to_player()
 
     def on_resize(self, width, height):
@@ -212,7 +214,7 @@ class MyGame(arcade.View):
         self.camera_gui.resize(int(width), int(height))
 
 def main():
-    window = arcade.Window(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE, center_window=True)
+    window = arcade.Window(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE, fullscreen=False, center_window=True)
     menu_view = MainMenuView()
     window.show_view(menu_view)
     arcade.run()
