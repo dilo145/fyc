@@ -1,86 +1,8 @@
 import arcade
-
-# --- Constants
-SCREEN_TITLE = "CoFyc"
-SCREEN_WIDTH = 1000
-SCREEN_HEIGHT = 650
-
-CHARACTER_SCALING = 0.32
-TILE_SCALING = 0.5
-PLAYER_MOVEMENT_SPEED = 10
-GRAVITY = 1
-PLAYER_JUMP_SPEED = 20
-ANIMATION_INTERVAL = 0.2  # Time in seconds between frame switches
-
-class MainMenuView(arcade.View):
-    def on_show(self):
-        arcade.set_background_color(arcade.color.AMAZON)
-
-    def on_draw(self):
-        """ Render the screen """
-        self.clear()
-
-        window_width = self.window.width
-        window_height = self.window.height
-
-        arcade.draw_text("CoFyc", window_width / 2, window_height / 2 + 50,
-                         arcade.color.WHITE, font_size=50, anchor_x="center", anchor_y="center")
-        arcade.draw_text("Press ENTER to start", window_width / 2, window_height / 2 - 50,
-                         arcade.color.GRAY, font_size=20, anchor_x="center", anchor_y="center")
-
-    def on_key_press(self, key, modifiers):
-        """ Start the game when the player presses ENTER """
-        if key == arcade.key.ENTER:
-            game_view = MyGame()
-            game_view.setup()
-            self.window.show_view(game_view)
-
-class EndGameView(arcade.View):
-    """ End game view """
-
-    def __init__(self, is_win, score=0):
-        super().__init__()
-        self.is_win = is_win  # True if the game is won, False if it's game over
-        self.score = score  # Score at the end of the game
-
-    def on_show(self):
-        arcade.set_background_color(arcade.color.BLACK)
-
-    def on_draw(self):
-        """ Render the end screen """
-        self.clear()
-        window_width = self.window.width
-        window_height = self.window.height
-
-        if self.is_win:
-            end_message = "You Win!"
-            color = arcade.color.GREEN
-            score_message = f"Final Score: {self.score}"
-        else:
-            end_message = "Game Over!"
-            color = arcade.color.RED
-            score_message = ""
-
-        arcade.draw_text(end_message, window_width / 2, window_height / 2 + 50,
-                         color, font_size=50, anchor_x="center", anchor_y="center")
-
-        if self.is_win:
-            arcade.draw_text(score_message, window_width / 2, window_height / 2,
-                             arcade.color.WHITE, font_size=20, anchor_x="center", anchor_y="center")
-        arcade.draw_text("Press ESC to return to Main Menu", window_width / 2, window_height / 2 - 50,
-                         arcade.color.GRAY, font_size=20, anchor_x="center", anchor_y="center")
-
-    def on_key_press(self, key, modifiers):
-        """ Handle key press on end screen """
-        if key == arcade.key.ESCAPE:
-            menu_view = MainMenuView()
-            self.window.show_view(menu_view)
+from models.constants import *
+from views.end_game_view import EndGameView
 
 class MyGame(arcade.View):
-    """
-    Main application class.
-    """
-
     def __init__(self):
         super().__init__()
         self.tile_map = None
@@ -99,14 +21,11 @@ class MyGame(arcade.View):
             "./assets/sprites/resources/coffeeAnimation2.png"
         ]
         self.current_image = 0
-        self.animation_timer = 0  # Timer to control animation speed
-
-        # Grace period attributes
-        self.grace_period = 1.0  # 1 second of grace period
+        self.animation_timer = 0
+        self.grace_period = 1.0
         self.grace_timer = 0.0
 
     def setup(self):
-        """Set up the game here. Call this function to restart the game."""
         self.camera_sprites = arcade.Camera(self.window.width, self.window.height)
         self.camera_gui = arcade.Camera(self.window.width, self.window.height)
 
@@ -173,11 +92,9 @@ class MyGame(arcade.View):
         self.physics_engine.update()
         self.animation_timer += delta_time
 
-        # Grace period to allow the player to start without an instant game over
         if self.grace_timer < self.grace_period:
             self.grace_timer += delta_time
         else:
-            # Proceed with regular off-ground time tracking after grace period
             if not self.physics_engine.can_jump():
                 self.off_ground_time += delta_time
                 if self.off_ground_time > self.fall_threshold:
@@ -212,12 +129,3 @@ class MyGame(arcade.View):
     def on_resize(self, width, height):
         self.camera_sprites.resize(int(width), int(height))
         self.camera_gui.resize(int(width), int(height))
-
-def main():
-    window = arcade.Window(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE, fullscreen=False, center_window=True)
-    menu_view = MainMenuView()
-    window.show_view(menu_view)
-    arcade.run()
-
-if __name__ == "__main__":
-    main()
