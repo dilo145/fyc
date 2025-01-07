@@ -1,10 +1,13 @@
 import arcade
+import os
 from models.constants import *
 from views.end_game_view import EndGameView
 
 class MyGame(arcade.View):
-    def __init__(self):
+    def __init__(self, selected_level):
         super().__init__()
+        self.selected_level = selected_level
+        self.levels = self.get_levels()
         self.tile_map = None
         self.scene = None
         self.player_sprite = None
@@ -24,12 +27,21 @@ class MyGame(arcade.View):
         self.animation_timer = 0
         self.grace_period = 1.0
         self.grace_timer = 0.0
+        self.in_vide = False
+
+    def get_levels(self):
+        levels = []
+        levels_folder = "./assets/sprites/levels"
+        for file_name in os.listdir(levels_folder):
+            if file_name.endswith(".tmx"):
+                levels.append(file_name)
+        return levels
 
     def setup(self):
         self.camera_sprites = arcade.Camera(self.window.width, self.window.height)
         self.camera_gui = arcade.Camera(self.window.width, self.window.height)
 
-        map_name = "./assets/sprites/levels/map_level_1.tmx"
+        map_name = f"./assets/sprites/levels/map_level_{self.selected_level + 1}.tmx"
         layer_options = {
             "ground": {"use_spatial_hash": True},
         }
@@ -98,7 +110,8 @@ class MyGame(arcade.View):
             if not self.physics_engine.can_jump():
                 self.off_ground_time += delta_time
                 if self.off_ground_time > self.fall_threshold:
-                    end_view = EndGameView(is_win=False, score=self.score)
+                    end_view = EndGameView(is_win=False, score=self.score, current_level=self.selected_level,
+                                           total_levels=len(self.levels))
                     self.window.show_view(end_view)
             else:
                 self.off_ground_time = 0
@@ -112,8 +125,21 @@ class MyGame(arcade.View):
         coffee_hit_list = arcade.check_for_collision_with_list(self.player_sprite, self.scene["coffee"])
         sugar_hit_list = arcade.check_for_collision_with_list(self.player_sprite, self.scene["sugar"])
         developer_hit = arcade.check_for_collision_with_list(self.player_sprite, self.scene["developer"])
+        vide_hit = arcade.check_for_collision_with_list(self.player_sprite, self.scene["vide"])
+
         if len(developer_hit) > 0:
-            end_view = EndGameView(is_win=True, score=self.score)
+            if self.score >= 1:
+                end_view = EndGameView(is_win=True, score=self.score, current_level=self.selected_level,
+                                   total_levels=len(self.levels))
+            else:
+                end_view = EndGameView(is_win=False, score=self.score, current_level=self.selected_level,
+                                       total_levels=len(self.levels))
+            self.window.show_view(end_view)
+        elif len(vide_hit) > 0:
+            self.in_vide = True
+        elif self.in_vide:  # If player was in "vide" and now unhit it
+            end_view = EndGameView(is_win=False, score=self.score, current_level=self.selected_level,
+                                   total_levels=len(self.levels))
             self.window.show_view(end_view)
 
         for coffee in coffee_hit_list:
