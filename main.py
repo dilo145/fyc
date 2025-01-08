@@ -1,16 +1,11 @@
 import arcade
-from game.game_view import GameView
+from views.main_menu_view import MainMenuView
+from models.constants import SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE
 
 def main():
-    # Création de la fenêtre du jeu
-    window = arcade.Window(GameView.SCREEN_WIDTH, GameView.SCREEN_HEIGHT, "Mon Jeu de Café")
-    
-    # Lancer la première vue du jeu
-    game_view = GameView()
-    game_view.setup()  # Initialiser le jeu
-    window.show_view(game_view)
-    
-    # Lancer la boucle de jeu
+    window = arcade.Window(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE, fullscreen=False, center_window=True)
+    menu_view = MainMenuView()
+    window.show_view(menu_view)
     arcade.run()
 
 if __name__ == "__main__":
