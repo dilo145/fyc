@@ -67,7 +67,7 @@ class MyGame(arcade.View):
             self.player_sprite, gravity_constant=GRAVITY, walls=self.scene["ground"]
         )
         # Play background music in a loop
-        arcade.play_sound(self.background_music, volume=0.2, looping=True)
+        self.background_music_player = arcade.play_sound(self.background_music, volume=0.2, looping=True)
 
     def on_draw(self):
         self.clear()
@@ -150,7 +150,7 @@ class MyGame(arcade.View):
         elif len(vide_hit) > 0:
             self.in_vide = True
         elif self.in_vide:  # If player was in "vide" and now unhit it
-            arcade.stop_sound(self.background_music)
+            arcade.stop_sound(self.background_music_player)
             arcade.play_sound(self.death_sound)
             end_view = EndGameView(is_win=False, score=self.score, current_level=self.selected_level,
                                    total_levels=len(self.levels))
