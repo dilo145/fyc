@@ -10,6 +10,8 @@ class LevelsView(arcade.View):
         self.animation_timer = 0
         self.scale_direction = 1
         self.scale_factor = 1.0
+        self.game_start = arcade.load_sound("./assets/sounds/game_start.mp3")
+
 
     def get_levels(self):
         levels = []
@@ -65,6 +67,7 @@ class LevelsView(arcade.View):
         elif key == arcade.key.ENTER:
             from views.my_game import MyGame  # Local import to avoid circular dependency
             game_view = MyGame(self.selected_level)
+            arcade.play_sound(self.game_start)
             game_view.setup()
             self.window.show_view(game_view)
 
