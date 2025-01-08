@@ -30,11 +30,12 @@ class MyGame(arcade.View):
         self.in_vide = False
 
         # Load sounds
-        self.coffee_sound = arcade.load_sound("./assets/sounds/sugar.mp3")
+        self.coffee_sound = arcade.load_sound("./assets/sounds/coffee_dip.mp3")
         self.sugar_sound = arcade.load_sound("./assets/sounds/sugar.mp3")
-        self.jump_sound = arcade.load_sound("./assets/sounds/sugar.mp3")
-        self.death_sound = arcade.load_sound("./assets/sounds/sugar.mp3")
-        self.background_music = arcade.load_sound("./assets/sounds/sugar.mp3")
+        self.jump_sound = arcade.load_sound("./assets/sounds/jump.mp3")
+        self.death_sound = arcade.load_sound("./assets/sounds/game_over.mp3")
+        self.drinking_coffee = arcade.load_sound("./assets/sounds/drinking_coffee.mp3")
+        self.background_music = arcade.load_sound("./assets/sounds/bg_music.mp3")
 
     def get_levels(self):
         levels = []
@@ -65,8 +66,8 @@ class MyGame(arcade.View):
         self.physics_engine = arcade.PhysicsEnginePlatformer(
             self.player_sprite, gravity_constant=GRAVITY, walls=self.scene["ground"]
         )
-         # Play background music in a loop
-        arcade.play_sound(self.background_music, volume=0.5, looping=True)
+        # Play background music in a loop
+        arcade.play_sound(self.background_music, volume=0.2, looping=True)
 
     def on_draw(self):
         self.clear()
@@ -138,6 +139,7 @@ class MyGame(arcade.View):
         vide_hit = arcade.check_for_collision_with_list(self.player_sprite, self.scene["vide"])
 
         if len(developer_hit) > 0:
+            arcade.play_sound(self.drinking_coffee)
             if self.score >= 1:
                 end_view = EndGameView(is_win=True, score=self.score, current_level=self.selected_level,
                                    total_levels=len(self.levels))
@@ -148,6 +150,7 @@ class MyGame(arcade.View):
         elif len(vide_hit) > 0:
             self.in_vide = True
         elif self.in_vide:  # If player was in "vide" and now unhit it
+            arcade.stop_sound(self.background_music)
             arcade.play_sound(self.death_sound)
             end_view = EndGameView(is_win=False, score=self.score, current_level=self.selected_level,
                                    total_levels=len(self.levels))
