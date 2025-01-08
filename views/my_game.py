@@ -29,6 +29,13 @@ class MyGame(arcade.View):
         self.grace_timer = 0.0
         self.in_vide = False
 
+        # Load sounds
+        self.coffee_sound = arcade.load_sound("./assets/sounds/sugar.mp3")
+        self.sugar_sound = arcade.load_sound("./assets/sounds/sugar.mp3")
+        self.jump_sound = arcade.load_sound("./assets/sounds/sugar.mp3")
+        self.death_sound = arcade.load_sound("./assets/sounds/sugar.mp3")
+        self.background_music = arcade.load_sound("./assets/sounds/sugar.mp3")
+
     def get_levels(self):
         levels = []
         levels_folder = "./assets/sprites/levels"
@@ -58,6 +65,8 @@ class MyGame(arcade.View):
         self.physics_engine = arcade.PhysicsEnginePlatformer(
             self.player_sprite, gravity_constant=GRAVITY, walls=self.scene["ground"]
         )
+         # Play background music in a loop
+        arcade.play_sound(self.background_music, volume=0.5, looping=True)
 
     def on_draw(self):
         self.clear()
@@ -78,6 +87,7 @@ class MyGame(arcade.View):
         if key == arcade.key.UP or key == arcade.key.W:
             if self.physics_engine.can_jump():
                 self.player_sprite.change_y = PLAYER_JUMP_SPEED
+                arcade.play_sound(self.jump_sound)
         elif key == arcade.key.LEFT or key == arcade.key.A:
             self.left_key_down = True
         elif key == arcade.key.RIGHT or key == arcade.key.D:
@@ -138,6 +148,7 @@ class MyGame(arcade.View):
         elif len(vide_hit) > 0:
             self.in_vide = True
         elif self.in_vide:  # If player was in "vide" and now unhit it
+            arcade.play_sound(self.death_sound)
             end_view = EndGameView(is_win=False, score=self.score, current_level=self.selected_level,
                                    total_levels=len(self.levels))
             self.window.show_view(end_view)
@@ -145,10 +156,12 @@ class MyGame(arcade.View):
         for coffee in coffee_hit_list:
             coffee.remove_from_sprite_lists()
             self.score += 1
+            arcade.play_sound(self.coffee_sound)
 
         for sugar in sugar_hit_list:
             sugar.remove_from_sprite_lists()
             self.score -= 1
+            arcade.play_sound(self.sugar_sound)
 
         self.center_camera_to_player()
 
