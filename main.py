@@ -3,7 +3,7 @@ from views.main_menu_view import MainMenuView
 from models.constants import SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE
 
 def main():
-    window = arcade.Window(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE, fullscreen=False, center_window=True)
+    window = arcade.Window(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE, fullscreen=True, center_window=True)
     menu_view = MainMenuView()
     window.show_view(menu_view)
     arcade.run()
