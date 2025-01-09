@@ -4,18 +4,18 @@ import os
 class LevelsView(arcade.View):
     def __init__(self):
         super().__init__()
-        self.levels_folder = "./assets/sprites/levels"
         self.levels = self.get_levels()
         self.selected_level = 0
         self.animation_timer = 0
         self.scale_direction = 1
         self.scale_factor = 1.0
-        self.game_start = arcade.load_sound("./assets/sounds/game_start.mp3")
+        self.game_start = arcade.load_sound("./assets/sounds/game_start.wav")
 
 
     def get_levels(self):
         levels = []
-        for file_name in os.listdir(self.levels_folder):
+        levels_folder = "./assets/sprites/levels"
+        for file_name in os.listdir(levels_folder):
             if file_name.endswith(".tmx"):
                 levels.append(file_name)
         return levels

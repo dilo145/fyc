@@ -30,12 +30,12 @@ class MyGame(arcade.View):
         self.in_vide = False
 
         # Load sounds
-        self.coffee_sound = arcade.load_sound("./assets/sounds/coffee_dip.mp3")
-        self.sugar_sound = arcade.load_sound("./assets/sounds/sugar.mp3")
-        self.jump_sound = arcade.load_sound("./assets/sounds/jump.mp3")
-        self.death_sound = arcade.load_sound("./assets/sounds/game_over.mp3")
-        self.drinking_coffee = arcade.load_sound("./assets/sounds/drinking_coffee.mp3")
-        self.background_music = arcade.load_sound("./assets/sounds/bg_music.mp3")
+        self.coffee_sound = arcade.load_sound("./assets/sounds/coffee_dip.wav")
+        self.sugar_sound = arcade.load_sound("./assets/sounds/sugar.wav")
+        self.jump_sound = arcade.load_sound("./assets/sounds/jump.wav")
+        self.death_sound = arcade.load_sound("./assets/sounds/game_over.wav")
+        self.drinking_coffee = arcade.load_sound("./assets/sounds/drinking_coffee.wav")
+        self.background_music = arcade.load_sound("./assets/sounds/bg_music.wav")
 
     def get_levels(self):
         levels = []
