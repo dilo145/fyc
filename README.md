@@ -88,7 +88,7 @@ Assurez-vous que l'environnement virtuel est activé, puis exécutez :
 python main.py
 ```
 
-## Support et aide
+## Support et aides
 
 Si vous rencontrez des difficultés :
 
