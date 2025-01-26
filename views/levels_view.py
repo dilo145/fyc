@@ -65,11 +65,10 @@ class LevelsView(arcade.View):
         elif key == arcade.key.DOWN:
             self.selected_level = (self.selected_level + levels_per_row) % len(self.levels)
         elif key == arcade.key.ENTER:
-            from views.my_game import MyGame  # Local import to avoid circular dependency
-            game_view = MyGame(self.selected_level)
+            from views.loading_view import LoadingView
+            loading_view = LoadingView(self.selected_level)
             arcade.play_sound(self.game_start)
-            game_view.setup()
-            self.window.show_view(game_view)
+            self.window.show_view(loading_view)
 
     def on_update(self, delta_time):
         self.animation_timer += delta_time

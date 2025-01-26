@@ -1,4 +1,5 @@
 import arcade
+from models.constants import *
 
 class MainMenuView(arcade.View):
     def __init__(self):
@@ -14,7 +15,7 @@ class MainMenuView(arcade.View):
         window_width = self.window.width
         window_height = self.window.height
 
-        arcade.draw_text("CoFyc", window_width / 2, window_height / 2 + 100,
+        arcade.draw_text(GAME_TITLE, window_width / 2, window_height / 2 + 100,
                          arcade.color.WHITE, font_size=50, anchor_x="center", anchor_y="center")
         arcade.draw_text("Press ENTER to select", window_width / 2, window_height / 2 - 100,
                          arcade.color.GRAY, font_size=20, anchor_x="center", anchor_y="center")
@@ -31,10 +32,9 @@ class MainMenuView(arcade.View):
             self.selected_option = (self.selected_option + 1) % len(self.menu_options)
         elif key == arcade.key.ENTER:
             if self.selected_option == 0:
-                from views.my_game import MyGame  # Local import to avoid circular dependency
-                game_view = MyGame(0)  # Start with level 0 (Level 1)
-                game_view.setup()
-                self.window.show_view(game_view)
+                from views.loading_view import LoadingView
+                loading_view = LoadingView(0)
+                self.window.show_view(loading_view)
             elif self.selected_option == 1:  # Levels
                 from views.levels_view import LevelsView
                 levels_view = LevelsView()

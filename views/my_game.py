@@ -25,9 +25,8 @@ class MyGame(arcade.View):
         ]
         self.current_image = 0
         self.animation_timer = 0
-        self.grace_period = 1.0
-        self.grace_timer = 0.0
         self.in_vide = False
+        self.timer_started = False
 
         # Load sounds
         self.coffee_sound = arcade.load_sound("./assets/sounds/coffee_dip.mp3")
@@ -50,24 +49,76 @@ class MyGame(arcade.View):
         self.camera_gui = arcade.Camera(self.window.width, self.window.height)
 
         map_name = f"./assets/sprites/levels/map_level_{self.selected_level + 1}.tmx"
+
         layer_options = {
-            "ground": {"use_spatial_hash": True},
+            "ground": {
+                "use_spatial_hash": True,
+                "hit_box_algorithm": "None"
+            },
+            "coffee": {
+                "use_spatial_hash": True,
+                "hit_box_algorithm": "None"
+            },
+            "sugar": {
+                "use_spatial_hash": True,
+                "hit_box_algorithm": "None"
+            },
+            "developer": {
+                "use_spatial_hash": True,
+                "hit_box_algorithm": "None"
+            },
+            "vide": {
+                "use_spatial_hash": True,
+                "hit_box_algorithm": "None"
+            }
         }
 
-        self.tile_map = arcade.load_tilemap(map_name, TILE_SCALING, layer_options)
-        self.scene = arcade.Scene.from_tilemap(self.tile_map)
-        if self.tile_map.background_color:
-            arcade.set_background_color(self.tile_map.background_color)
-        self.score = 0
-        self.player_sprite = arcade.Sprite(self.player_images[self.current_image], CHARACTER_SCALING)
-        self.player_sprite.center_x = 128
-        self.player_sprite.center_y = 128
-        self.scene.add_sprite("Player", self.player_sprite)
-        self.physics_engine = arcade.PhysicsEnginePlatformer(
-            self.player_sprite, gravity_constant=GRAVITY, walls=self.scene["ground"]
-        )
-        # Play background music in a loop
+        try:
+            self.tile_map = arcade.load_tilemap(map_name, TILE_SCALING, layer_options)
+            self.scene = arcade.Scene.from_tilemap(self.tile_map)
+
+            if self.tile_map.background_color:
+                arcade.set_background_color(self.tile_map.background_color)
+            else:
+                arcade.set_background_color(arcade.color.SKY_BLUE)
+
+            self.scene.add_sprite_list("Player")
+            self.player_sprite = arcade.Sprite(
+                self.player_images[self.current_image],
+                CHARACTER_SCALING
+            )
+            self.player_sprite.center_x = 128
+            self.player_sprite.center_y = 128
+            self.scene.add_sprite("Player", self.player_sprite)
+
+            if "ground" in self.tile_map.sprite_lists:
+                self.physics_engine = arcade.PhysicsEnginePlatformer(
+                    self.player_sprite,
+                    gravity_constant=GRAVITY,
+                    walls=self.tile_map.sprite_lists["ground"]
+                )
+            else:
+                self.physics_engine = arcade.PhysicsEnginePlatformer(
+                    self.player_sprite,
+                    gravity_constant=GRAVITY,
+                    walls=arcade.SpriteList()
+                )
+
+        except Exception as e:
+            print(f"Error loading level: {e}")
+            self.physics_engine = arcade.PhysicsEnginePlatformer(
+                self.player_sprite,
+                gravity_constant=GRAVITY,
+                walls=arcade.SpriteList()
+            )
+
         self.background_music_player = arcade.play_sound(self.background_music, volume=0.2, looping=True)
+        self.time_remaining = LEVEL_TIME_LIMITS.get(self.selected_level)
+        self.timer_started = False
+
+    def on_show(self):
+        super().on_show()
+        self.timer_started = True
 
     def on_draw(self):
         self.clear()
@@ -76,6 +127,8 @@ class MyGame(arcade.View):
         self.camera_gui.use()
         score_text = f"Score: {self.score}"
         arcade.draw_text(score_text, 10, 10, arcade.csscolor.WHITE, 18)
+        time_text = f"Time: {int(self.time_remaining)}"
+        arcade.draw_text(time_text, 10, 40, arcade.csscolor.WHITE, 18)
 
     def update_player_speed(self):
         self.player_sprite.change_x = 0
@@ -115,28 +168,16 @@ class MyGame(arcade.View):
         self.physics_engine.update()
         self.animation_timer += delta_time
 
-        if self.grace_timer < self.grace_period:
-            self.grace_timer += delta_time
-        else:
-            if not self.physics_engine.can_jump():
-                self.off_ground_time += delta_time
-                if self.off_ground_time > self.fall_threshold:
-                    end_view = EndGameView(is_win=False, score=self.score, current_level=self.selected_level,
-                                           total_levels=len(self.levels))
-                    self.window.show_view(end_view)
-            else:
-                self.off_ground_time = 0
-
         if self.left_key_down or self.right_key_down:
             if self.animation_timer >= ANIMATION_INTERVAL:
                 self.current_image = (self.current_image + 1) % 2
                 self.player_sprite.texture = arcade.load_texture(self.player_images[self.current_image])
                 self.animation_timer = 0
 
-        coffee_hit_list = arcade.check_for_collision_with_list(self.player_sprite, self.scene["coffee"])
-        sugar_hit_list = arcade.check_for_collision_with_list(self.player_sprite, self.scene["sugar"])
-        developer_hit = arcade.check_for_collision_with_list(self.player_sprite, self.scene["developer"])
-        vide_hit = arcade.check_for_collision_with_list(self.player_sprite, self.scene["vide"])
+        coffee_hit_list = arcade.check_for_collision_with_list(self.player_sprite, self.scene.get_sprite_list("coffee"))
+        sugar_hit_list = arcade.check_for_collision_with_list(self.player_sprite, self.scene.get_sprite_list("sugar"))
+        developer_hit = arcade.check_for_collision_with_list(self.player_sprite, self.scene.get_sprite_list("developer"))
+        vide_hit = arcade.check_for_collision_with_list(self.player_sprite, self.scene.get_sprite_list("vide"))
 
         if len(developer_hit) > 0:
             arcade.play_sound(self.drinking_coffee)
@@ -165,6 +206,14 @@ class MyGame(arcade.View):
             sugar.remove_from_sprite_lists()
             self.score -= 1
             arcade.play_sound(self.sugar_sound)
+
+        if self.timer_started:
+            self.time_remaining -= delta_time
+            if self.time_remaining <= 0:
+                end_view = EndGameView(is_win=False, score=self.score,
+                                       current_level=self.selected_level,
+                                       total_levels=len(self.levels))
+                self.window.show_view(end_view)
 
         self.center_camera_to_player()
 
